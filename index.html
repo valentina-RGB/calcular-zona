@@ -3,536 +3,228 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calculadora de Espacio — Bodega</title>
+<title>BodegaCalc</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --green:     #1a7a2e;
-    --green-mid: #2ea043;
-    --green-lt:  #e6f4ea;
-    --green-xlt: #f3fbf5;
-    --red:       #d32f2f;
-    --red-lt:    #ffebee;
-    --orange:    #e65100;
-    --orange-lt: #fff3e0;
-    --gray-900:  #1a1a1a;
-    --gray-700:  #3d3d3d;
-    --gray-500:  #757575;
-    --gray-300:  #d4d4d4;
-    --gray-100:  #f5f5f5;
-    --white:     #ffffff;
-    --shadow:    0 2px 12px rgba(0,0,0,0.08);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
-    --radius:    14px;
-    --radius-sm: 8px;
-  }
+:root {
+  --green:     #1a7a2e;
+  --green-mid: #2ea043;
+  --green-lt:  #e6f4ea;
+  --green-xlt: #f3fbf5;
+  --red:       #d32f2f;
+  --red-lt:    #ffebee;
+  --orange:    #e65100;
+  --orange-lt: #fff3e0;
+  --gray-900:  #1a1a1a;
+  --gray-700:  #3d3d3d;
+  --gray-500:  #757575;
+  --gray-300:  #d4d4d4;
+  --gray-100:  #f5f5f5;
+  --white:     #ffffff;
+  --shadow:    0 2px 12px rgba(0,0,0,0.08);
+  --radius:    14px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: #f0f7f1; color: var(--gray-900); min-height: 100vh; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+header {
+  background: var(--green); padding: 0 28px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 16px rgba(26,122,46,0.3);
+}
+.logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem; color: white; display: flex; align-items: center; gap: 8px; }
+.nav { display: flex; gap: 4px; }
+.nav-btn { padding: 7px 16px; border: none; border-radius: 20px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all .2s; color: rgba(255,255,255,0.7); background: transparent; }
+.nav-btn.active { background: rgba(255,255,255,0.2); color: white; }
+.nav-btn:hover:not(.active) { color: white; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: #f0f7f1;
-    color: var(--gray-900);
-    min-height: 100vh;
-  }
+.container { max-width: 860px; margin: 0 auto; padding: 28px 20px 80px; }
 
-  /* ─── HEADER ─── */
-  header {
-    background: var(--green);
-    padding: 0 32px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 16px rgba(26,122,46,0.3);
-  }
-  header .logo {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 1.15rem;
-    color: white;
-    letter-spacing: -0.5px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  header .logo span { font-size: 1.4rem; }
-  header .badge {
-    background: rgba(255,255,255,0.15);
-    color: white;
-    font-size: 0.75rem;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-weight: 500;
-  }
+.card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; animation: fadeUp .25s ease; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.card-header { background: var(--green); padding: 18px 26px; color: white; }
+.card-header h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+.card-header p { font-size: 0.8rem; opacity: 0.8; }
+.card-body { padding: 24px 26px; }
 
-  /* ─── LAYOUT ─── */
-  .container {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 32px 24px 80px;
-  }
+.field-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 0.75rem; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
+.field input, .field select { padding: 10px 13px; border: 2px solid var(--gray-300); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 0.93rem; background: var(--gray-100); transition: border-color .2s; outline: none; }
+.field input:focus, .field select:focus { border-color: var(--green-mid); background: white; }
+.field input[type=number] { font-weight: 600; color: var(--green); }
 
-  /* ─── STEPS ─── */
-  .steps {
-    display: flex;
-    gap: 0;
-    margin-bottom: 32px;
-    background: white;
-    border-radius: var(--radius);
-    padding: 6px;
-    box-shadow: var(--shadow);
-  }
-  .step-btn {
-    flex: 1;
-    padding: 10px 8px;
-    border: none;
-    background: transparent;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--gray-500);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: all 0.2s;
-  }
-  .step-btn.active {
-    background: var(--green);
-    color: white;
-    box-shadow: 0 2px 8px rgba(26,122,46,0.3);
-  }
-  .step-btn.done { color: var(--green); }
-  .step-num {
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    background: currentColor;
-    color: white;
-    font-size: 0.7rem;
-    font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .step-btn.active .step-num { background: rgba(255,255,255,0.3); }
-  .step-btn.done .step-num { background: var(--green); color: white; }
-  .step-btn:not(.active) .step-num { background: var(--gray-300); color: white; }
+.steps { display: flex; margin-bottom: 24px; background: white; border-radius: var(--radius); padding: 5px; box-shadow: var(--shadow); }
+.step-btn { flex: 1; padding: 9px 6px; border: none; background: transparent; border-radius: var(--radius-sm); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 500; color: var(--gray-500); display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .2s; }
+.step-btn.active { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(26,122,46,.3); }
+.step-btn.done { color: var(--green); }
+.step-num { width: 18px; height: 18px; border-radius: 50%; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.step-btn.active .step-num { background: rgba(255,255,255,0.25); color: white; }
+.step-btn.done .step-num { background: var(--green); color: white; }
+.step-btn:not(.active):not(.done) .step-num { background: var(--gray-300); color: white; }
 
-  /* ─── CARD ─── */
-  .card {
-    background: white;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    animation: fadeUp 0.3s ease;
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+.space-visual { background: var(--green-xlt); border: 2px dashed var(--green-mid); border-radius: var(--radius-sm); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 18px; }
+.space-box { font-size: 2rem; flex-shrink: 0; }
+.space-info .space-val { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--green); }
+.space-info .space-label { font-size: 0.78rem; color: var(--gray-500); margin-top: 1px; }
 
-  .card-header {
-    background: var(--green);
-    padding: 20px 28px;
-    color: white;
-  }
-  .card-header h2 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.05rem;
-    font-weight: 700;
-    margin-bottom: 2px;
-  }
-  .card-header p { font-size: 0.82rem; opacity: 0.8; }
+.product-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.product-row { background: var(--gray-100); border: 2px solid var(--gray-300); border-radius: var(--radius-sm); padding: 12px 14px; display: grid; grid-template-columns: 1fr 85px auto; gap: 10px; align-items: center; transition: border-color .2s; }
+.product-row:hover { border-color: var(--green-mid); }
+.product-row select { padding: 8px 10px; border: 2px solid var(--gray-300); border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.87rem; background: white; outline: none; cursor: pointer; }
+.product-row select:focus { border-color: var(--green-mid); }
+.product-row input[type=number] { padding: 8px 10px; border: 2px solid var(--gray-300); border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.93rem; font-weight: 600; color: var(--green); background: white; text-align: center; outline: none; width: 100%; }
+.product-row input[type=number]:focus { border-color: var(--green-mid); }
+.remove-btn { width: 28px; height: 28px; border: none; background: var(--red-lt); color: var(--red); border-radius: 6px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+.remove-btn:hover { background: var(--red); color: white; }
+.row-labels { display: grid; grid-template-columns: 1fr 85px 28px; gap: 10px; padding: 0 14px; margin-bottom: 5px; }
+.row-labels span { font-size: 0.7rem; font-weight: 600; color: var(--gray-500); text-transform: uppercase; }
+.add-btn { width: 100%; padding: 10px; border: 2px dashed var(--green-mid); background: var(--green-xlt); color: var(--green); border-radius: var(--radius-sm); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.87rem; font-weight: 600; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.add-btn:hover { background: var(--green-lt); border-style: solid; }
 
-  .card-body { padding: 28px; }
+.btn-row { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+.btn { padding: 11px 26px; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+.btn-primary { background: var(--green); color: white; box-shadow: 0 3px 10px rgba(26,122,46,.25); }
+.btn-primary:hover { background: var(--green-mid); transform: translateY(-1px); }
+.btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 2px solid var(--gray-300); }
+.btn-secondary:hover { background: var(--gray-300); }
 
-  /* ─── FORM ─── */
-  .field-group {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-  .field { display: flex; flex-direction: column; gap: 6px; }
-  .field label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--gray-500);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .field input, .field select {
-    padding: 11px 14px;
-    border: 2px solid var(--gray-300);
-    border-radius: var(--radius-sm);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
-    color: var(--gray-900);
-    background: var(--gray-100);
-    transition: border-color 0.2s, background 0.2s;
-    outline: none;
-  }
-  .field input:focus, .field select:focus {
-    border-color: var(--green-mid);
-    background: white;
-  }
-  .field input[type=number] { font-weight: 600; color: var(--green); }
+.result-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.result-row { display: grid; grid-template-columns: 1fr 90px 100px 110px; gap: 10px; align-items: center; padding: 12px 14px; border-radius: var(--radius-sm); border: 2px solid transparent; }
+.result-row.ok   { background: var(--green-lt); border-color: #a8d5b0; }
+.result-row.fail { background: var(--red-lt);   border-color: #f5b8b8; }
+.result-row .prod-name { font-weight: 600; font-size: 0.9rem; }
+.result-row .prod-dims { font-size: 0.73rem; color: var(--gray-500); margin-top: 2px; }
+.result-stat { text-align: center; }
+.result-stat .val { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 700; }
+.result-stat .lbl { font-size: 0.68rem; color: var(--gray-500); }
+.result-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-align: center; }
+.badge-ok   { background: var(--green); color: white; }
+.badge-fail { background: var(--red);   color: white; }
+.result-headers { display: grid; grid-template-columns: 1fr 90px 100px 110px; gap: 10px; padding: 0 14px 5px; }
+.result-headers span { font-size: 0.7rem; font-weight: 600; color: var(--gray-500); text-transform: uppercase; text-align: center; }
+.result-headers span:first-child { text-align: left; }
 
-  /* ─── SPACE VISUAL ─── */
-  .space-visual {
-    background: var(--green-xlt);
-    border: 2px dashed var(--green-mid);
-    border-radius: var(--radius-sm);
-    padding: 20px;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-  .space-box {
-    width: 80px; height: 60px;
-    background: var(--green-lt);
-    border: 2px solid var(--green-mid);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.6rem;
-    flex-shrink: 0;
-  }
-  .space-info { flex: 1; }
-  .space-info .space-val {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--green);
-  }
-  .space-info .space-label {
-    font-size: 0.8rem;
-    color: var(--gray-500);
-    margin-top: 2px;
-  }
+.summary-box { border-radius: var(--radius-sm); padding: 16px 20px; margin-bottom: 18px; display: flex; align-items: center; gap: 14px; }
+.summary-box.ok   { background: var(--green-lt); border: 2px solid #a8d5b0; }
+.summary-box.fail { background: var(--red-lt);   border: 2px solid #f5b8b8; }
+.summary-box.warn { background: var(--orange-lt);border: 2px solid #ffcc80; }
+.summary-icon { font-size: 2rem; }
+.summary-text h3 { font-family: 'Space Grotesk', sans-serif; font-size: 0.97rem; font-weight: 700; margin-bottom: 2px; }
+.summary-text p  { font-size: 0.82rem; color: var(--gray-700); }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+.stat-card { background: var(--gray-100); border-radius: var(--radius-sm); padding: 12px; text-align: center; border: 2px solid var(--gray-300); }
+.stat-card .val { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--green); }
+.stat-card .lbl { font-size: 0.72rem; color: var(--gray-500); margin-top: 2px; }
 
-  /* ─── PRODUCT ROWS ─── */
-  .product-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.upload-zone { border: 3px dashed var(--green-mid); border-radius: var(--radius); padding: 32px 24px; text-align: center; cursor: pointer; transition: all .2s; background: var(--green-xlt); margin-bottom: 20px; }
+.upload-zone:hover, .upload-zone.dragging { background: var(--green-lt); border-color: var(--green); }
+.upload-icon { font-size: 2.5rem; margin-bottom: 8px; }
+.upload-zone h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+.upload-zone p { font-size: 0.81rem; color: var(--gray-500); line-height: 1.5; }
+.upload-zone input { display: none; }
 
-  .product-row {
-    background: var(--gray-100);
-    border: 2px solid var(--gray-300);
-    border-radius: var(--radius-sm);
-    padding: 14px 16px;
-    display: grid;
-    grid-template-columns: 1fr 90px 90px auto;
-    gap: 12px;
-    align-items: center;
-    transition: border-color 0.2s;
-  }
-  .product-row:hover { border-color: var(--green-mid); }
-  .product-row select {
-    padding: 8px 10px;
-    border: 2px solid var(--gray-300);
-    border-radius: 6px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.88rem;
-    background: white;
-    outline: none;
-    cursor: pointer;
-  }
-  .product-row select:focus { border-color: var(--green-mid); }
-  .product-row input[type=number] {
-    padding: 8px 10px;
-    border: 2px solid var(--gray-300);
-    border-radius: 6px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--green);
-    background: white;
-    text-align: center;
-    outline: none;
-    width: 100%;
-  }
-  .product-row input[type=number]:focus { border-color: var(--green-mid); }
-  .remove-btn {
-    width: 30px; height: 30px;
-    border: none;
-    background: var(--red-lt);
-    color: var(--red);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
-  }
-  .remove-btn:hover { background: var(--red); color: white; }
+.catalog-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.catalog-header h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 700; }
+.catalog-count { font-size: 0.8rem; color: var(--gray-500); background: var(--green-lt); color: var(--green); padding: 3px 10px; border-radius: 12px; font-weight: 600; }
 
-  .product-row-labels {
-    display: grid;
-    grid-template-columns: 1fr 90px 90px 30px;
-    gap: 12px;
-    padding: 0 16px;
-    margin-bottom: 6px;
-  }
-  .product-row-labels span {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--gray-500);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-  }
+.catalog-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+.catalog-table th { background: var(--green); color: white; padding: 9px 12px; text-align: left; font-weight: 600; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.4px; }
+.catalog-table td { padding: 8px 12px; border-bottom: 1px solid var(--gray-300); }
+.catalog-table tr:hover td { background: var(--green-xlt); }
+.catalog-table td input[type=text]   { padding: 5px 8px; border: 1px solid var(--gray-300); border-radius: 5px; font-family: 'DM Sans', sans-serif; font-size: 0.87rem; width: 100%; }
+.catalog-table td input[type=number] { padding: 5px 8px; border: 1px solid var(--gray-300); border-radius: 5px; font-family: 'DM Sans', sans-serif; font-size: 0.87rem; width: 70px; text-align: center; font-weight: 600; color: var(--green); }
+.catalog-table td input:focus { outline: none; border-color: var(--green-mid); }
+.del-row-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 1rem; padding: 3px 7px; border-radius: 4px; }
+.del-row-btn:hover { background: var(--red-lt); }
 
-  .add-btn {
-    width: 100%;
-    padding: 11px;
-    border: 2px dashed var(--green-mid);
-    background: var(--green-xlt);
-    color: var(--green);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.88rem;
-    font-weight: 600;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-  .add-btn:hover { background: var(--green-lt); border-style: solid; }
+.alert { padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.alert-success { background: var(--green-lt); color: var(--green); border: 1px solid #a8d5b0; }
+.alert-error   { background: var(--red-lt);   color: var(--red);   border: 1px solid #f5b8b8; }
+.alert-info    { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
 
-  /* ─── BUTTONS ─── */
-  .btn-row {
-    display: flex;
-    gap: 12px;
-    margin-top: 24px;
-    justify-content: flex-end;
-  }
-  .btn {
-    padding: 12px 28px;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.92rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-primary {
-    background: var(--green);
-    color: white;
-    box-shadow: 0 3px 12px rgba(26,122,46,0.3);
-  }
-  .btn-primary:hover { background: var(--green-mid); transform: translateY(-1px); }
-  .btn-secondary {
-    background: var(--gray-100);
-    color: var(--gray-700);
-    border: 2px solid var(--gray-300);
-  }
-  .btn-secondary:hover { background: var(--gray-300); }
+.hint { font-size: 0.8rem; color: var(--gray-500); background: var(--gray-100); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 16px; line-height: 1.5; }
+.hint strong { color: var(--green); }
 
-  /* ─── RESULTS ─── */
-  .result-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
-
-  .result-row {
-    display: grid;
-    grid-template-columns: 1fr 100px 100px 120px;
-    gap: 12px;
-    align-items: center;
-    padding: 14px 16px;
-    border-radius: var(--radius-sm);
-    border: 2px solid transparent;
-    transition: all 0.3s;
-  }
-  .result-row.ok    { background: var(--green-lt); border-color: #a8d5b0; }
-  .result-row.fail  { background: var(--red-lt);   border-color: #f5b8b8; }
-  .result-row.warn  { background: var(--orange-lt);border-color: #ffcc80; }
-
-  .result-row .prod-name {
-    font-weight: 600;
-    font-size: 0.92rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .result-row .prod-dims {
-    font-size: 0.75rem;
-    color: var(--gray-500);
-    margin-top: 2px;
-  }
-  .result-stat { text-align: center; }
-  .result-stat .val {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.05rem;
-    font-weight: 700;
-  }
-  .result-stat .lbl { font-size: 0.7rem; color: var(--gray-500); }
-  .result-badge {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    text-align: center;
-  }
-  .badge-ok   { background: var(--green);  color: white; }
-  .badge-fail { background: var(--red);    color: white; }
-  .badge-warn { background: var(--orange); color: white; }
-
-  .result-headers {
-    display: grid;
-    grid-template-columns: 1fr 100px 100px 120px;
-    gap: 12px;
-    padding: 0 16px 6px;
-  }
-  .result-headers span {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--gray-500);
-    text-transform: uppercase;
-    text-align: center;
-  }
-  .result-headers span:first-child { text-align: left; }
-
-  /* ─── SUMMARY BOX ─── */
-  .summary-box {
-    border-radius: var(--radius-sm);
-    padding: 20px 24px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .summary-box.ok   { background: var(--green-lt); border: 2px solid #a8d5b0; }
-  .summary-box.fail { background: var(--red-lt);   border: 2px solid #f5b8b8; }
-  .summary-box.warn { background: var(--orange-lt);border: 2px solid #ffcc80; }
-  .summary-icon { font-size: 2.2rem; }
-  .summary-text h3 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 3px;
-  }
-  .summary-text p { font-size: 0.84rem; color: var(--gray-700); }
-
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .stat-card {
-    background: var(--gray-100);
-    border-radius: var(--radius-sm);
-    padding: 14px;
-    text-align: center;
-    border: 2px solid var(--gray-300);
-  }
-  .stat-card .val {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--green);
-  }
-  .stat-card .lbl { font-size: 0.75rem; color: var(--gray-500); margin-top: 3px; }
-
-  .hidden { display: none !important; }
+.hidden { display: none !important; }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo"><span>🏭</span> BodegaCalc</div>
-  <div class="badge">Calculadora de Espacio</div>
+  <div class="logo">🏭 BodegaCalc</div>
+  <div class="nav">
+    <button class="nav-btn active" id="navCalc" onclick="showPage('calc')">Calculadora</button>
+    <button class="nav-btn" id="navCat" onclick="showPage('catalog')">📋 Catálogo</button>
+  </div>
 </header>
 
-<div class="container">
-
-  <!-- STEPS -->
+<!-- CALCULADORA -->
+<div id="pagCalc" class="container">
   <div class="steps">
-    <button class="step-btn active" id="sBtn1" onclick="goStep(1)">
-      <span class="step-num">1</span> Espacio libre
-    </button>
-    <button class="step-btn" id="sBtn2" onclick="goStep(2)">
-      <span class="step-num">2</span> Productos a meter
-    </button>
-    <button class="step-btn" id="sBtn3" onclick="goStep(3)">
-      <span class="step-num">3</span> Resultado
-    </button>
+    <button class="step-btn active" id="sBtn1" onclick="goStep(1)"><span class="step-num">1</span> Espacio libre</button>
+    <button class="step-btn"        id="sBtn2" onclick="goStep(2)"><span class="step-num">2</span> Productos</button>
+    <button class="step-btn"        id="sBtn3" onclick="goStep(3)"><span class="step-num">3</span> Resultado</button>
   </div>
 
-  <!-- STEP 1 -->
   <div id="step1" class="card">
     <div class="card-header">
       <h2>¿Cuánto espacio libre hay en el área?</h2>
-      <p>El operario mide (o estima) el espacio disponible sin ocupar</p>
+      <p>El operario mide o estima el espacio disponible sin ocupar</p>
     </div>
     <div class="card-body">
       <div class="field-group">
-        <div class="field">
+        <div class="field" style="grid-column:1/-1">
           <label>Nombre del área</label>
-          <input type="text" id="areaName" placeholder="ej: Bodega A" value="Bodega Principal">
+          <input type="text" id="areaName" value="Bodega Principal">
         </div>
       </div>
       <div class="field-group">
-        <div class="field">
-          <label>Ancho libre (cm)</label>
-          <input type="number" id="areaW" placeholder="300" value="300" min="1">
-        </div>
-        <div class="field">
-          <label>Largo libre (cm)</label>
-          <input type="number" id="areaL" placeholder="400" value="400" min="1">
-        </div>
-        <div class="field">
-          <label>Alto libre (cm)</label>
-          <input type="number" id="areaH" placeholder="180" value="180" min="1">
-        </div>
+        <div class="field"><label>Ancho libre (cm)</label><input type="number" id="areaW" value="300" min="1"></div>
+        <div class="field"><label>Largo libre (cm)</label><input type="number" id="areaL" value="400" min="1"></div>
+        <div class="field"><label>Alto libre (cm)</label> <input type="number" id="areaH" value="180" min="1"></div>
       </div>
-
-      <div class="space-visual" id="spaceVisual">
+      <div class="space-visual">
         <div class="space-box">📐</div>
         <div class="space-info">
           <div class="space-val" id="spaceVal">—</div>
           <div class="space-label">cm² de planta disponible</div>
         </div>
-        <div class="space-info">
+        <div class="space-info" style="margin-left:24px">
           <div class="space-val" id="volVal">—</div>
           <div class="space-label">cm³ de volumen libre</div>
         </div>
       </div>
-
       <div class="btn-row">
         <button class="btn btn-primary" onclick="goStep(2)">Siguiente →</button>
       </div>
     </div>
   </div>
 
-  <!-- STEP 2 -->
   <div id="step2" class="card hidden">
     <div class="card-header">
       <h2>¿Qué productos quieres meter?</h2>
       <p>Selecciona del catálogo y define la cantidad de cada uno</p>
     </div>
     <div class="card-body">
-      <div class="product-row-labels">
-        <span>Producto</span>
-        <span style="text-align:center">Cantidad</span>
-        <span></span>
-        <span></span>
+      <div id="noCatalogWarn" class="alert alert-info hidden">
+        ⚠️ No hay productos en el catálogo. Ve a <strong>Catálogo</strong> y sube tu Excel o agrega productos manualmente.
+      </div>
+      <div class="row-labels">
+        <span>Producto</span><span style="text-align:center">Cantidad</span><span></span>
       </div>
       <div class="product-list" id="productList"></div>
-      <button class="add-btn" onclick="addProduct()">＋ Agregar producto</button>
+      <button class="add-btn" onclick="addProductRow()">＋ Agregar producto</button>
       <div class="btn-row">
         <button class="btn btn-secondary" onclick="goStep(1)">← Volver</button>
-        <button class="btn btn-primary" onclick="calculate()">Calcular ✓</button>
+        <button class="btn btn-primary"   onclick="calculate()">Calcular ✓</button>
       </div>
     </div>
   </div>
 
-  <!-- STEP 3 -->
   <div id="step3" class="card hidden">
     <div class="card-header">
       <h2>Resultado</h2>
@@ -543,214 +235,332 @@
         <div class="summary-icon" id="summaryIcon">✅</div>
         <div class="summary-text">
           <h3 id="summaryTitle">—</h3>
-          <p id="summaryDesc">—</p>
+          <p  id="summaryDesc">—</p>
         </div>
       </div>
-
       <div class="stats-row">
-        <div class="stat-card">
-          <div class="val" id="statPlanta">—</div>
-          <div class="lbl">cm² disponibles</div>
-        </div>
-        <div class="stat-card">
-          <div class="val" id="statUsado">—</div>
-          <div class="lbl">cm² mínimos requeridos</div>
-        </div>
-        <div class="stat-card">
-          <div class="val" id="statSobrante">—</div>
-          <div class="lbl">cm² sobrantes</div>
-        </div>
+        <div class="stat-card"><div class="val" id="statPlanta">—</div><div class="lbl">cm² disponibles</div></div>
+        <div class="stat-card"><div class="val" id="statUsado">—</div> <div class="lbl">cm² requeridos</div></div>
+        <div class="stat-card"><div class="val" id="statSob">—</div>   <div class="lbl">cm² sobrantes</div></div>
       </div>
-
       <div class="result-headers">
-        <span>Producto</span>
-        <span>Solicitado</span>
-        <span>Máx. que caben</span>
-        <span>Estado</span>
+        <span>Producto</span><span>Solicitado</span><span>Máx. que caben</span><span>Estado</span>
       </div>
       <div class="result-grid" id="resultGrid"></div>
-
       <div class="btn-row">
         <button class="btn btn-secondary" onclick="goStep(2)">← Ajustar</button>
-        <button class="btn btn-primary" onclick="goStep(1)">Nueva consulta</button>
+        <button class="btn btn-primary"   onclick="resetCalc()">Nueva consulta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CATÁLOGO -->
+<div id="pagCatalog" class="container hidden">
+  <div class="card">
+    <div class="card-header">
+      <h2>📋 Catálogo de Productos</h2>
+      <p>Importa desde Excel o edita los productos directamente aquí</p>
+    </div>
+    <div class="card-body">
+
+      <div class="upload-zone" id="uploadZone"
+        onclick="document.getElementById('fileInput').click()"
+        ondragover="event.preventDefault();this.classList.add('dragging')"
+        ondragleave="this.classList.remove('dragging')"
+        ondrop="handleDrop(event)">
+        <div class="upload-icon">📂</div>
+        <h3>Subir Excel de productos</h3>
+        <p>Arrastra el archivo aquí o haz clic para buscarlo</p>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this.files[0])">
+      </div>
+
+      <div class="hint">
+        El Excel debe tener estas columnas (en cualquier orden):
+        <strong>Nombre</strong>, <strong>Ancho</strong>, <strong>Profundidad</strong> (o Prof/Fondo), <strong>Altura</strong> (o Alto) — medidas en cm.
+      </div>
+
+      <div id="uploadAlert" class="hidden"></div>
+
+      <div class="catalog-header">
+        <h3>Productos actuales</h3>
+        <span class="catalog-count" id="catalogCount">0 productos</span>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table class="catalog-table">
+          <thead><tr>
+            <th>Nombre</th><th>Ancho (cm)</th><th>Profundidad (cm)</th><th>Altura (cm)</th><th></th>
+          </tr></thead>
+          <tbody id="catalogBody"></tbody>
+        </table>
+      </div>
+
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-secondary" onclick="addCatalogRow()">＋ Agregar manualmente</button>
+        <button class="btn btn-primary"   onclick="saveCatalog()">💾 Guardar cambios</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-const CATALOG = [
-  { name: "Jabón",           w: 80, d: 50, h: 10 },
-  { name: "Caja mediana",    w: 40, d: 30, h: 30 },
-  { name: "Caja grande",     w: 60, d: 50, h: 50 },
-  { name: "Botella 1L",      w: 10, d: 10, h: 30 },
-  { name: "Bolsa cereal",    w: 25, d: 10, h: 35 },
-  { name: "Detergente",      w: 15, d: 15, h: 28 },
-  { name: "Shampoo 500ml",   w:  8, d:  8, h: 24 },
-  { name: "Arroz 5kg",       w: 30, d: 10, h: 40 },
-  { name: "Aceite 1L",       w:  8, d:  8, h: 28 },
-  { name: "Papel higiénico", w: 20, d: 20, h: 22 },
-];
+let catalog = [];
+let rowCount = 0;
+const LS_KEY = 'bodegacalc_v2';
 
-let productCount = 0;
+function init() {
+  const saved = localStorage.getItem(LS_KEY);
+  if (saved) {
+    try { catalog = JSON.parse(saved); } catch(e) { catalog = defaultCatalog(); }
+  } else {
+    catalog = defaultCatalog();
+    localStorage.setItem(LS_KEY, JSON.stringify(catalog));
+  }
+  renderCatalogTable();
+  updateSpaceVisual();
+  ['areaW','areaL','areaH'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateSpaceVisual));
+}
 
-function fmt(n) { return n.toLocaleString('es-CO'); }
+function defaultCatalog() {
+  return [
+    {name:"Jabón",          w:80,d:50,h:10},
+    {name:"Caja mediana",   w:40,d:30,h:30},
+    {name:"Caja grande",    w:60,d:50,h:50},
+    {name:"Botella 1L",     w:10,d:10,h:30},
+    {name:"Bolsa cereal",   w:25,d:10,h:35},
+    {name:"Detergente",     w:15,d:15,h:28},
+    {name:"Arroz 5kg",      w:30,d:10,h:40},
+  ];
+}
 
-// Live update space visual
-['areaW','areaL','areaH'].forEach(id => {
-  document.getElementById(id).addEventListener('input', updateSpaceVisual);
-});
+function showPage(p) {
+  document.getElementById('pagCalc').classList.toggle('hidden', p !== 'calc');
+  document.getElementById('pagCatalog').classList.toggle('hidden', p !== 'catalog');
+  document.getElementById('navCalc').classList.toggle('active', p === 'calc');
+  document.getElementById('navCat').classList.toggle('active',  p === 'catalog');
+}
+
+function goStep(n) {
+  if (n === 2) {
+    document.getElementById('noCatalogWarn').classList.toggle('hidden', catalog.length > 0);
+    if (!document.getElementById('productList').children.length) addProductRow();
+  }
+  [1,2,3].forEach(i => {
+    document.getElementById(`step${i}`).classList.toggle('hidden', i !== n);
+    const b = document.getElementById(`sBtn${i}`);
+    b.classList.remove('active','done');
+    if (i === n) b.classList.add('active');
+    else if (i < n) b.classList.add('done');
+  });
+}
+
 function updateSpaceVisual() {
-  const w = +document.getElementById('areaW').value || 0;
-  const l = +document.getElementById('areaL').value || 0;
-  const h = +document.getElementById('areaH').value || 0;
-  document.getElementById('spaceVal').textContent = w && l ? fmt(w * l) : '—';
-  document.getElementById('volVal').textContent   = w && l && h ? fmt(w * l * h) : '—';
-}
-updateSpaceVisual();
-
-function buildSelect(selected = '') {
-  return `<select onchange="updateRowDims(this)">
-    <option value="">— Elegir producto —</option>
-    ${CATALOG.map(p => `<option value="${p.name}" ${p.name === selected ? 'selected' : ''}>${p.name}</option>`).join('')}
-  </select>`;
+  const w = +document.getElementById('areaW').value||0;
+  const l = +document.getElementById('areaL').value||0;
+  const h = +document.getElementById('areaH').value||0;
+  const f = n => n.toLocaleString('es-CO');
+  document.getElementById('spaceVal').textContent = w&&l ? f(w*l) : '—';
+  document.getElementById('volVal').textContent   = w&&l&&h ? f(w*l*h) : '—';
 }
 
-function addProduct(name = '', qty = '') {
-  productCount++;
-  const id = productCount;
+function buildOptions(selected='') {
+  return catalog.map(p =>
+    `<option value="${p.name}"${p.name===selected?' selected':''}>${p.name}</option>`
+  ).join('');
+}
+
+function addProductRow(name='', qty='') {
+  rowCount++;
+  const id = rowCount;
   const div = document.createElement('div');
   div.className = 'product-row';
   div.id = `pr-${id}`;
   div.innerHTML = `
-    ${buildSelect(name).replace('<select', `<select id="sel-${id}"`)}
+    <select id="sel-${id}">
+      <option value="">— Elegir producto —</option>
+      ${buildOptions(name)}
+    </select>
     <input type="number" id="qty-${id}" placeholder="Cant." value="${qty}" min="1">
-    <div style="font-size:0.75rem;color:var(--gray-500);text-align:center" id="dims-${id}">—</div>
-    <button class="remove-btn" onclick="removeProduct(${id})">✕</button>
+    <button class="remove-btn" onclick="this.closest('.product-row').remove()">✕</button>
   `;
   document.getElementById('productList').appendChild(div);
-  if (name) updateDims(id);
-  document.getElementById(`sel-${id}`).addEventListener('change', () => updateDims(id));
-}
-
-function updateDims(id) {
-  const sel = document.getElementById(`sel-${id}`).value;
-  const p = CATALOG.find(x => x.name === sel);
-  const el = document.getElementById(`dims-${id}`);
-  if (p) el.innerHTML = `${p.w}×${p.d}×${p.h} cm`;
-  else el.textContent = '—';
-}
-
-function updateRowDims(sel) {
-  const id = sel.id.replace('sel-', '');
-  updateDims(id);
-}
-
-function removeProduct(id) {
-  document.getElementById(`pr-${id}`)?.remove();
-}
-
-// Pre-load sample products
-addProduct('Jabón', 50);
-addProduct('Caja mediana', 20);
-
-function goStep(n) {
-  [1,2,3].forEach(i => {
-    document.getElementById(`step${i}`).classList.toggle('hidden', i !== n);
-    const btn = document.getElementById(`sBtn${i}`);
-    btn.classList.remove('active', 'done');
-    if (i === n) btn.classList.add('active');
-    else if (i < n) btn.classList.add('done');
-  });
 }
 
 function calculate() {
-  const aW = +document.getElementById('areaW').value || 0;
-  const aL = +document.getElementById('areaL').value || 0;
-  const aH = +document.getElementById('areaH').value || 0;
-  const aName = document.getElementById('areaName').value || 'Área';
-
-  if (!aW || !aL || !aH) { alert('Completa las dimensiones del área'); return; }
+  const aW = +document.getElementById('areaW').value||0;
+  const aL = +document.getElementById('areaL').value||0;
+  const aH = +document.getElementById('areaH').value||0;
+  const aName = document.getElementById('areaName').value||'Área';
+  if (!aW||!aL||!aH) { alert('Completa las dimensiones del área'); return; }
 
   const rows = document.querySelectorAll('.product-row');
   const items = [];
   for (const row of rows) {
-    const id = row.id.replace('pr-', '');
+    const id   = row.id.replace('pr-','');
     const name = document.getElementById(`sel-${id}`).value;
-    const qty  = +document.getElementById(`qty-${id}`).value || 0;
-    if (!name) continue;
-    const p = CATALOG.find(x => x.name === name);
-    if (!p || !qty) continue;
-    const capas   = Math.max(1, Math.floor(aH / p.h));
-    const filas   = Math.floor(aW / p.w);
-    const cols    = Math.floor(aL / p.d);
-    const maxUnit = filas * cols * capas;
-    const minPlanta = Math.ceil(qty / capas) * p.w * p.d;
-    items.push({ name, qty, maxUnit, minPlanta, p, capas, filas, cols });
+    const qty  = +document.getElementById(`qty-${id}`).value||0;
+    if (!name||!qty) continue;
+    const p = catalog.find(x => x.name===name);
+    if (!p) continue;
+    const capas   = Math.max(1, Math.floor(aH/p.h));
+    const filas   = Math.floor(aW/p.w);
+    const cols    = Math.floor(aL/p.d);
+    const maxUnit = filas*cols*capas;
+    const minPlanta = Math.ceil(qty/capas)*p.w*p.d;
+    items.push({name, qty, maxUnit, minPlanta, p, capas, filas, cols});
   }
-
   if (!items.length) { alert('Agrega al menos un producto con cantidad'); return; }
 
-  const totalPlanta   = aW * aL;
-  const totalReq      = items.reduce((s, x) => s + x.minPlanta, 0);
-  const sobrante      = totalPlanta - totalReq;
-  const allFit        = items.every(x => x.qty <= x.maxUnit);
-  const plantaOk      = totalReq <= totalPlanta;
+  const f = n => n.toLocaleString('es-CO');
+  const totalPlanta = aW*aL;
+  const totalReq    = items.reduce((s,x)=>s+x.minPlanta,0);
+  const sobrante    = totalPlanta-totalReq;
+  const allFit      = items.every(x=>x.qty<=x.maxUnit);
+  const plantaOk    = totalReq<=totalPlanta;
 
-  // Summary
-  let sClass, sIcon, sTitle, sDesc;
-  if (allFit && plantaOk) {
-    sClass = 'ok'; sIcon = '✅';
-    sTitle = '¡Todo cabe correctamente!';
-    sDesc  = `Los ${items.length} producto(s) entran en el espacio libre de ${aName}.`;
+  let sClass,sIcon,sTitle,sDesc;
+  if (allFit&&plantaOk) {
+    sClass='ok'; sIcon='✅'; sTitle='¡Todo cabe correctamente!';
+    sDesc=`Los ${items.length} producto(s) entran en el espacio libre de ${aName}.`;
   } else if (!plantaOk) {
-    sClass = 'fail'; sIcon = '❌';
-    sTitle = 'No caben todos los productos';
-    sDesc  = `La planta mínima requerida (${fmt(totalReq)} cm²) supera el espacio disponible (${fmt(totalPlanta)} cm²).`;
+    sClass='fail'; sIcon='❌'; sTitle='No hay espacio suficiente';
+    sDesc=`Se necesitan ${f(totalReq)} cm² pero solo hay ${f(totalPlanta)} cm² disponibles.`;
   } else {
-    sClass = 'warn'; sIcon = '⚠️';
-    sTitle = 'Algunos productos no caben';
-    sDesc  = 'Revisa los productos marcados en rojo y ajusta las cantidades.';
+    sClass='warn'; sIcon='⚠️'; sTitle='Algunos productos no caben';
+    sDesc='Revisa los productos marcados en rojo y ajusta las cantidades.';
   }
 
-  const box = document.getElementById('summaryBox');
-  box.className = `summary-box ${sClass}`;
-  document.getElementById('summaryIcon').textContent  = sIcon;
-  document.getElementById('summaryTitle').textContent = sTitle;
-  document.getElementById('summaryDesc').textContent  = sDesc;
-  document.getElementById('resultSubtitle').textContent = aName;
+  document.getElementById('summaryBox').className=`summary-box ${sClass}`;
+  document.getElementById('summaryIcon').textContent=sIcon;
+  document.getElementById('summaryTitle').textContent=sTitle;
+  document.getElementById('summaryDesc').textContent=sDesc;
+  document.getElementById('resultSubtitle').textContent=aName;
+  document.getElementById('statPlanta').textContent=f(totalPlanta);
+  document.getElementById('statUsado').textContent=f(totalReq);
+  document.getElementById('statSob').textContent=sobrante>=0?f(sobrante):`−${f(Math.abs(sobrante))}`;
 
-  document.getElementById('statPlanta').textContent   = fmt(totalPlanta);
-  document.getElementById('statUsado').textContent    = fmt(totalReq);
-  document.getElementById('statSobrante').textContent = sobrante >= 0 ? fmt(sobrante) : `−${fmt(Math.abs(sobrante))}`;
-
-  const grid = document.getElementById('resultGrid');
-  grid.innerHTML = '';
+  const grid=document.getElementById('resultGrid');
+  grid.innerHTML='';
   for (const item of items) {
-    const ok = item.qty <= item.maxUnit;
-    const cls = ok ? 'ok' : 'fail';
-    const badge = ok ? '<span class="result-badge badge-ok">✅ SÍ CABE</span>'
-                     : '<span class="result-badge badge-fail">❌ NO CABE</span>';
-    grid.innerHTML += `
-      <div class="result-row ${cls}">
+    const ok=item.qty<=item.maxUnit;
+    grid.innerHTML+=`
+      <div class="result-row ${ok?'ok':'fail'}">
         <div>
           <div class="prod-name">${item.name}</div>
-          <div class="prod-dims">${item.p.w}×${item.p.d}×${item.p.h} cm · ${item.capas} cap${item.capas>1?'as':'a'} · ${item.filas}×${item.cols} por capa</div>
+          <div class="prod-dims">${item.p.w}×${item.p.d}×${item.p.h} cm · ${item.capas} capa(s) · ${item.filas}×${item.cols} por capa</div>
         </div>
-        <div class="result-stat">
-          <div class="val">${item.qty}</div>
-          <div class="lbl">unidades</div>
-        </div>
-        <div class="result-stat">
-          <div class="val" style="color:${ok?'var(--green)':'var(--red)'}">${item.maxUnit}</div>
-          <div class="lbl">máximo</div>
-        </div>
-        ${badge}
+        <div class="result-stat"><div class="val">${item.qty}</div><div class="lbl">solicitadas</div></div>
+        <div class="result-stat"><div class="val" style="color:${ok?'var(--green)':'var(--red)'}">${item.maxUnit}</div><div class="lbl">máximo</div></div>
+        <span class="result-badge ${ok?'badge-ok':'badge-fail'}">${ok?'✅ SÍ CABE':'❌ NO CABE'}</span>
       </div>`;
   }
-
   goStep(3);
 }
+
+function resetCalc() {
+  document.getElementById('productList').innerHTML='';
+  rowCount=0;
+  goStep(1);
+}
+
+// CATALOG
+function renderCatalogTable() {
+  const tbody=document.getElementById('catalogBody');
+  tbody.innerHTML='';
+  catalog.forEach((p,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><input type="text"   id="cn-${i}" value="${p.name}"></td>
+      <td><input type="number" id="cw-${i}" value="${p.w}"></td>
+      <td><input type="number" id="cd-${i}" value="${p.d}"></td>
+      <td><input type="number" id="ch-${i}" value="${p.h}"></td>
+      <td><button class="del-row-btn" onclick="deleteCatalogRow(${i})">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('catalogCount').textContent=`${catalog.length} producto(s)`;
+}
+
+function addCatalogRow() {
+  catalog.push({name:'Nuevo producto',w:10,d:10,h:10});
+  renderCatalogTable();
+}
+
+function deleteCatalogRow(i) {
+  catalog.splice(i,1);
+  renderCatalogTable();
+}
+
+function saveCatalog() {
+  const updated=[];
+  for (let i=0;i<catalog.length;i++) {
+    const name=document.getElementById(`cn-${i}`)?.value.trim();
+    const w=+document.getElementById(`cw-${i}`)?.value||0;
+    const d=+document.getElementById(`cd-${i}`)?.value||0;
+    const h=+document.getElementById(`ch-${i}`)?.value||0;
+    if (name&&w&&d&&h) updated.push({name,w,d,h});
+  }
+  catalog=updated;
+  localStorage.setItem(LS_KEY,JSON.stringify(catalog));
+  renderCatalogTable();
+  showAlert(`✅ ${catalog.length} productos guardados. Ya están disponibles en la calculadora.`,'success');
+}
+
+// EXCEL
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('dragging');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try {
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if (!rows.length) { showAlert('❌ El archivo está vacío o sin formato correcto.','error'); return; }
+
+      const find=(...terms)=>Object.keys(rows[0]).find(k=>terms.some(t=>k.toLowerCase().includes(t)));
+      const cN=find('nombre','name','producto');
+      const cW=find('ancho','width');
+      const cD=find('prof','fondo','depth','largo');
+      const cH=find('alto','height','altura');
+
+      if (!cN||!cW||!cD||!cH) {
+        showAlert('❌ No se encontraron las columnas. El Excel necesita: Nombre, Ancho, Profundidad, Altura','error');
+        return;
+      }
+      const imported=rows
+        .map(r=>({name:String(r[cN]).trim(),w:+r[cW]||0,d:+r[cD]||0,h:+r[cH]||0}))
+        .filter(p=>p.name&&p.w&&p.d&&p.h);
+
+      if (!imported.length) { showAlert('❌ Sin productos válidos. Revisa que las celdas tengan datos.','error'); return; }
+      catalog=imported;
+      localStorage.setItem(LS_KEY,JSON.stringify(catalog));
+      renderCatalogTable();
+      showAlert(`✅ ${catalog.length} productos importados desde el Excel y guardados.`,'success');
+    } catch(err) {
+      showAlert('❌ Error leyendo el archivo. Asegúrate que sea un .xlsx válido.','error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  document.getElementById('fileInput').value='';
+}
+
+function showAlert(msg,type) {
+  const el=document.getElementById('uploadAlert');
+  el.className=`alert alert-${type}`;
+  el.textContent=msg;
+  el.classList.remove('hidden');
+  setTimeout(()=>el.classList.add('hidden'),5000);
+}
+
+init();
 </script>
 </body>
 </html>
