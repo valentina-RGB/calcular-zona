@@ -158,7 +158,7 @@ header {
   <div class="logo">🏭 BodegaCalc</div>
   <div class="nav">
     <button class="nav-btn active" id="navCalc" onclick="showPage('calc')">Calculadora</button>
-    <button class="nav-btn" id="navCat" onclick="showPage('catalog')"> Catálogo</button>
+    <button class="nav-btn" id="navCat" onclick="showPage('catalog')">📋 Catálogo</button>
   </div>
 </header>
 
@@ -182,10 +182,26 @@ header {
           <input type="text" id="areaName" value="Bodega Principal">
         </div>
       </div>
+      <!-- UNIT TOGGLE -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <span style="font-size:0.8rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px">Unidad de medida:</span>
+        <div style="display:flex;background:var(--gray-100);border-radius:20px;padding:3px;border:2px solid var(--gray-300);gap:2px">
+          <button id="unitBtnM" onclick="setUnit('m')"
+            style="padding:6px 18px;border:none;border-radius:16px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all .2s;background:var(--green);color:white;box-shadow:0 2px 6px rgba(26,122,46,.3)">
+            Metros
+          </button>
+          <button id="unitBtnCm" onclick="setUnit('cm')"
+            style="padding:6px 18px;border:none;border-radius:16px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all .2s;background:transparent;color:var(--gray-500)">
+            Centímetros
+          </button>
+        </div>
+        <span id="unitHint" style="font-size:0.78rem;color:var(--gray-500);font-style:italic">ej: 3 m × 4 m × 2.2 m</span>
+      </div>
+
       <div class="field-group">
-        <div class="field"><label>Ancho libre (cm)</label><input type="number" id="areaW" value="300" min="1"></div>
-        <div class="field"><label>Largo libre (cm)</label><input type="number" id="areaL" value="400" min="1"></div>
-        <div class="field"><label>Alto libre (cm)</label> <input type="number" id="areaH" value="180" min="1"></div>
+        <div class="field"><label id="lblW">Ancho libre (m)</label><input type="number" id="areaW" value="3" min="0.01" step="0.1"></div>
+        <div class="field"><label id="lblL">Largo libre (m)</label><input type="number" id="areaL" value="4" min="0.01" step="0.1"></div>
+        <div class="field"><label id="lblH">Alto libre (m)</label> <input type="number" id="areaH" value="2.2" min="0.01" step="0.1"></div>
       </div>
       <div class="space-visual">
         <div class="space-box">📐</div>
@@ -356,13 +372,50 @@ function goStep(n) {
   });
 }
 
+let currentUnit = 'm';
+
+function setUnit(unit) {
+  currentUnit = unit;
+  const isM = unit === 'm';
+  // Toggle button styles
+  document.getElementById('unitBtnM').style.cssText  = isM
+    ? 'padding:6px 18px;border:none;border-radius:16px;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all .2s;background:var(--green);color:white;box-shadow:0 2px 6px rgba(26,122,46,.3)'
+    : 'padding:6px 18px;border:none;border-radius:16px;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all .2s;background:transparent;color:var(--gray-500)';
+  document.getElementById('unitBtnCm').style.cssText = !isM
+    ? 'padding:6px 18px;border:none;border-radius:16px;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all .2s;background:var(--green);color:white;box-shadow:0 2px 6px rgba(26,122,46,.3)'
+    : 'padding:6px 18px;border:none;border-radius:16px;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all .2s;background:transparent;color:var(--gray-500)';
+  // Update labels
+  const u = isM ? 'm' : 'cm';
+  document.getElementById('lblW').textContent = `Ancho libre (${u})`;
+  document.getElementById('lblL').textContent = `Largo libre (${u})`;
+  document.getElementById('lblH').textContent = `Alto libre (${u})`;
+  // Update hint and step
+  const inputs = ['areaW','areaL','areaH'];
+  if (isM) {
+    document.getElementById('unitHint').textContent = 'ej: 3 m × 4 m × 2.2 m';
+    inputs.forEach(id => { document.getElementById(id).step='0.1'; document.getElementById(id).value=parseFloat(document.getElementById(id).value)/100||''; });
+  } else {
+    document.getElementById('unitHint').textContent = 'ej: 300 cm × 400 cm × 180 cm';
+    inputs.forEach(id => { document.getElementById(id).step='1'; document.getElementById(id).value=Math.round(parseFloat(document.getElementById(id).value)*100)||''; });
+  }
+  updateSpaceVisual();
+}
+
+function getCm(id) {
+  const v = +document.getElementById(id).value || 0;
+  return currentUnit === 'm' ? v * 100 : v;
+}
+
 function updateSpaceVisual() {
-  const w = +document.getElementById('areaW').value||0;
-  const l = +document.getElementById('areaL').value||0;
-  const h = +document.getElementById('areaH').value||0;
+  const w = getCm('areaW'), l = getCm('areaL'), h = getCm('areaH');
   const f = n => n.toLocaleString('es-CO');
-  document.getElementById('spaceVal').textContent = w&&l ? f(w*l) : '—';
-  document.getElementById('volVal').textContent   = w&&l&&h ? f(w*l*h) : '—';
+  const u = currentUnit === 'm' ? 'm²' : 'cm²';
+  const uv = currentUnit === 'm' ? 'm³' : 'cm³';
+  const wD = currentUnit === 'm' ? w/100 : w;
+  const lD = currentUnit === 'm' ? l/100 : l;
+  const hD = currentUnit === 'm' ? h/100 : h;
+  document.getElementById('spaceVal').textContent = w&&l ? `${f(+(wD*lD).toFixed(2))} ${u}` : '—';
+  document.getElementById('volVal').textContent   = w&&l&&h ? `${f(+(wD*lD*hD).toFixed(2))} ${uv}` : '—';
 }
 
 function buildOptions(selected='') {
@@ -378,20 +431,31 @@ function addProductRow(name='', qty='') {
   div.className = 'product-row';
   div.id = `pr-${id}`;
   div.innerHTML = `
-    <select id="sel-${id}">
-      <option value="">— Elegir producto —</option>
-      ${buildOptions(name)}
-    </select>
+    <div>
+      <select id="sel-${id}" onchange="updateDimLabel(${id})">
+        <option value="">— Elegir producto —</option>
+        ${buildOptions(name)}
+      </select>
+      <div id="dims-${id}" style="font-size:0.72rem;color:var(--gray-500);margin-top:4px;padding-left:2px;min-height:14px"></div>
+    </div>
     <input type="number" id="qty-${id}" placeholder="Cant." value="${qty}" min="1">
     <button class="remove-btn" onclick="this.closest('.product-row').remove()">✕</button>
   `;
   document.getElementById('productList').appendChild(div);
+  if (name) updateDimLabel(id);
+}
+
+function updateDimLabel(id) {
+  const name = document.getElementById(`sel-${id}`).value;
+  const el   = document.getElementById(`dims-${id}`);
+  const p    = catalog.find(x => x.name === name);
+  el.textContent = p ? `${p.w} × ${p.d} × ${p.h} cm  (ancho × prof × alto)` : '';
 }
 
 function calculate() {
-  const aW = +document.getElementById('areaW').value||0;
-  const aL = +document.getElementById('areaL').value||0;
-  const aH = +document.getElementById('areaH').value||0;
+  const aW = getCm('areaW');
+  const aL = getCm('areaL');
+  const aH = getCm('areaH');
   const aName = document.getElementById('areaName').value||'Área';
   if (!aW||!aL||!aH) { alert('Completa las dimensiones del área'); return; }
 
@@ -453,7 +517,7 @@ function calculate() {
         </div>
         <div class="result-stat"><div class="val">${item.qty}</div><div class="lbl">solicitadas</div></div>
         <div class="result-stat"><div class="val" style="color:${ok?'var(--green)':'var(--red)'}">${item.maxUnit}</div><div class="lbl">máximo</div></div>
-        <span class="result-badge ${ok?'badge-ok':'badge-fail'}">${ok?' SÍ CABE':'❌ NO CABE'}</span>
+        <span class="result-badge ${ok?'badge-ok':'badge-fail'}">${ok?'✅ SÍ CABE':'❌ NO CABE'}</span>
       </div>`;
   }
   goStep(3);
