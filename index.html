@@ -298,7 +298,7 @@ header {
 
       <div class="btn-row" style="margin-top:14px">
         <button class="btn btn-secondary" onclick="addCatalogRow()">＋ Agregar manualmente</button>
-        <button class="btn btn-primary"   onclick="saveCatalog()"> Guardar cambios</button>
+        <button class="btn btn-primary"   onclick="saveCatalog()">💾 Guardar cambios</button>
       </div>
     </div>
   </div>
@@ -522,14 +522,23 @@ function handleFile(file) {
     try {
       const wb=XLSX.read(e.target.result,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-      if (!rows.length) { showAlert('❌ El archivo está vacío o sin formato correcto.','error'); return; }
 
-      const find=(...terms)=>Object.keys(rows[0]).find(k=>terms.some(t=>k.toLowerCase().includes(t)));
-      const cN=find('nombre','name','producto');
-      const cW=find('ancho','width');
-      const cD=find('prof','fondo','depth','largo');
-      const cH=find('alto','height','altura');
+      // Try reading from different header rows (1, 2, 3, 4) to handle templates with title rows
+      let rows = [];
+      let cN,cW,cD,cH;
+      const find=(r,...terms)=>Object.keys(r[0]||{}).find(k=>terms.some(t=>k.toLowerCase().includes(t)));
+
+      for (let startRow = 1; startRow <= 5; startRow++) {
+        const attempt = XLSX.utils.sheet_to_json(ws, {defval:'', range: startRow - 1});
+        if (!attempt.length) continue;
+        cN = find(attempt,'nombre','name','producto');
+        cW = find(attempt,'ancho','width');
+        cD = find(attempt,'prof','fondo','depth','largo');
+        cH = find(attempt,'alto','height','altura');
+        if (cN && cW && cD && cH) { rows = attempt; break; }
+      }
+
+      if (!rows.length) { showAlert('❌ El archivo está vacío o sin formato correcto.','error'); return; }
 
       if (!cN||!cW||!cD||!cH) {
         showAlert('❌ No se encontraron las columnas. El Excel necesita: Nombre, Ancho, Profundidad, Altura','error');
