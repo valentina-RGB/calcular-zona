@@ -234,6 +234,18 @@ header {
       </div>
       <div class="product-list" id="productList"></div>
       <button class="add-btn" onclick="addProductRow()">＋ Agregar producto</button>
+
+      <!-- ORDERING SUGGESTION -->
+      <div id="orderBox" style="display:none;margin-top:18px;background:var(--green-xlt);border:2px solid var(--green-mid);border-radius:var(--radius-sm);overflow:hidden">
+        <div style="background:var(--green);padding:10px 16px;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:0.88rem;font-weight:700;color:white">📦 Orden sugerido de cargue</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:0.75rem;color:rgba(255,255,255,0.8)">Líquidos al piso → grandes → pequeños arriba</span>
+            <button onclick="updateOrder()" style="padding:4px 12px;border:2px solid rgba(255,255,255,0.5);background:transparent;color:white;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='transparent'">↺ Recalcular</button>
+          </div>
+        </div>
+        <div id="orderList" style="padding:12px 16px;display:flex;flex-direction:column;gap:6px"></div>
+      </div>
       <div class="btn-row">
         <button class="btn btn-secondary" onclick="goStep(1)">← Volver</button>
         <button class="btn btn-primary"   onclick="calculate()">Calcular ✓</button>
@@ -306,7 +318,7 @@ header {
       <div style="overflow-x:auto">
         <table class="catalog-table">
           <thead><tr>
-            <th>Nombre</th><th>Ancho (cm)</th><th>Profundidad (cm)</th><th>Altura (cm)</th><th></th>
+            <th>Nombre</th><th>Ancho (cm)</th><th>Profundidad (cm)</th><th>Altura (cm)</th><th>Peso (kg)</th><th></th>
           </tr></thead>
           <tbody id="catalogBody"></tbody>
         </table>
@@ -341,13 +353,13 @@ function init() {
 
 function defaultCatalog() {
   return [
-    {name:"Jabón",          w:80,d:50,h:10},
-    {name:"Caja mediana",   w:40,d:30,h:30},
-    {name:"Caja grande",    w:60,d:50,h:50},
-    {name:"Botella 1L",     w:10,d:10,h:30},
-    {name:"Bolsa cereal",   w:25,d:10,h:35},
-    {name:"Detergente",     w:15,d:15,h:28},
-    {name:"Arroz 5kg",      w:30,d:10,h:40},
+    {name:"Jabón",          w:80,d:50,h:10,kg:0.15},
+    {name:"Caja mediana",   w:40,d:30,h:30,kg:5},
+    {name:"Caja grande",    w:60,d:50,h:50,kg:12},
+    {name:"Botella 1L",     w:10,d:10,h:30,kg:1},
+    {name:"Bolsa cereal",   w:25,d:10,h:35,kg:0.5},
+    {name:"Detergente",     w:15,d:15,h:28,kg:1.5},
+    {name:"Arroz 5kg",      w:30,d:10,h:40,kg:5},
   ];
 }
 
@@ -436,7 +448,12 @@ function addProductRow(name='', qty='') {
         <option value="">— Elegir producto —</option>
         ${buildOptions(name)}
       </select>
-      <div id="dims-${id}" style="font-size:0.72rem;color:var(--gray-500);margin-top:4px;padding-left:2px;min-height:14px"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
+        <div id="dims-${id}" style="font-size:0.72rem;color:var(--gray-500);flex:1"></div>
+        <label style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:#1565c0;font-weight:600;cursor:pointer;white-space:nowrap">
+          <input type="checkbox" id="liq-${id}" onchange="updateOrder()" style="accent-color:#1565c0"> 💧 Líquido
+        </label>
+      </div>
     </div>
     <input type="number" id="qty-${id}" placeholder="Cant." value="${qty}" min="1">
     <button class="remove-btn" onclick="this.closest('.product-row').remove()">✕</button>
@@ -449,7 +466,53 @@ function updateDimLabel(id) {
   const name = document.getElementById(`sel-${id}`).value;
   const el   = document.getElementById(`dims-${id}`);
   const p    = catalog.find(x => x.name === name);
-  el.textContent = p ? `${p.w} × ${p.d} × ${p.h} cm  (ancho × prof × alto)` : '';
+  el.textContent = p ? `${p.w} × ${p.d} × ${p.h} cm (ancho × prof × alto)` : '';
+  updateOrder();
+}
+
+function updateOrder() {
+  const rows = document.querySelectorAll('.product-row');
+  const items = [];
+  for (const row of rows) {
+    const id   = row.id.replace('pr-','');
+    const name = document.getElementById(`sel-${id}`)?.value;
+    if (!name) continue;
+    const p = catalog.find(x => x.name === name);
+    if (p) items.push(p);
+  }
+  const box = document.getElementById('orderBox');
+  const list = document.getElementById('orderList');
+  if (items.length < 2) { box.style.display='none'; return; }
+
+  // Get liquid flags per row
+  const allRows = document.querySelectorAll('.product-row');
+  const withLiq = items.map((p, i) => {
+    const id = allRows[i]?.id.replace('pr-','');
+    const isLiq = document.getElementById(`liq-${id}`)?.checked || false;
+    return {...p, isLiq};
+  });
+
+  // Sort: liquids first, then by volume desc
+  const sorted = withLiq.sort((a,b) => {
+    if (a.isLiq !== b.isLiq) return a.isLiq ? -1 : 1;
+    return (b.w*b.d*b.h) - (a.w*a.d*a.h);
+  });
+
+  const colors = ['#1a7a2e','#2e7d32','#388e3c','#43a047','#66bb6a'];
+  list.innerHTML = sorted.map((p,i) => {
+    const vol = (p.w*p.d*p.h/1000000).toFixed(4);
+    const pos = i===0 ? 'Va al piso' : i===sorted.length-1 ? 'Va arriba' : `Capa ${i+1}`;
+    const liqBadge = p.isLiq ? '<span style="background:#e3f2fd;color:#1565c0;font-size:0.7rem;font-weight:700;padding:2px 7px;border-radius:10px">💧 Líquido</span>' : '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:white;border-radius:6px;border-left:4px solid ${colors[Math.min(i,4)]}">
+      <span style="font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;color:${colors[Math.min(i,4)]};min-width:24px">${i+1}</span>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.88rem;display:flex;align-items:center;gap:6px">${p.name} ${liqBadge}</div>
+        <div style="font-size:0.72rem;color:var(--gray-500)">${p.w}×${p.d}×${p.h} cm · vol: ${vol} m³</div>
+      </div>
+      <span style="font-size:0.75rem;font-weight:600;color:${colors[Math.min(i,4)]};white-space:nowrap">${pos}</span>
+    </div>`;
+  }).join('');
+  box.style.display='block';
 }
 
 function calculate() {
@@ -540,6 +603,7 @@ function renderCatalogTable() {
       <td><input type="number" id="cw-${i}" value="${p.w}"></td>
       <td><input type="number" id="cd-${i}" value="${p.d}"></td>
       <td><input type="number" id="ch-${i}" value="${p.h}"></td>
+      <td><input type="number" id="ck-${i}" value="${p.kg||0}" step="0.1"></td>
       <td><button class="del-row-btn" onclick="deleteCatalogRow(${i})">✕</button></td>
     `;
     tbody.appendChild(tr);
@@ -548,7 +612,7 @@ function renderCatalogTable() {
 }
 
 function addCatalogRow() {
-  catalog.push({name:'Nuevo producto',w:10,d:10,h:10});
+  catalog.push({name:'Nuevo producto',w:10,d:10,h:10,kg:0});
   renderCatalogTable();
 }
 
@@ -564,7 +628,8 @@ function saveCatalog() {
     const w=+document.getElementById(`cw-${i}`)?.value||0;
     const d=+document.getElementById(`cd-${i}`)?.value||0;
     const h=+document.getElementById(`ch-${i}`)?.value||0;
-    if (name&&w&&d&&h) updated.push({name,w,d,h});
+    const kg=+document.getElementById(`ck-${i}`)?.value||0;
+    if (name&&w&&d&&h) updated.push({name,w,d,h,kg});
   }
   catalog=updated;
   localStorage.setItem(LS_KEY,JSON.stringify(catalog));
@@ -591,6 +656,7 @@ function handleFile(file) {
       let rows = [];
       let cN,cW,cD,cH;
       const find=(r,...terms)=>Object.keys(r[0]||{}).find(k=>terms.some(t=>k.toLowerCase().includes(t)));
+      const findOpt=(r,...terms)=>Object.keys(r[0]||{}).find(k=>terms.some(t=>k.toLowerCase().includes(t)));
 
       for (let startRow = 1; startRow <= 5; startRow++) {
         const attempt = XLSX.utils.sheet_to_json(ws, {defval:'', range: startRow - 1});
@@ -608,8 +674,9 @@ function handleFile(file) {
         showAlert('❌ No se encontraron las columnas. El Excel necesita: Nombre, Ancho, Profundidad, Altura','error');
         return;
       }
+      const cKG = findOpt(rows,'peso','weight','kg');
       const imported=rows
-        .map(r=>({name:String(r[cN]).trim(),w:+r[cW]||0,d:+r[cD]||0,h:+r[cH]||0}))
+        .map(r=>({name:String(r[cN]).trim(),w:+r[cW]||0,d:+r[cD]||0,h:+r[cH]||0,kg:cKG?+r[cKG]||0:0}))
         .filter(p=>p.name&&p.w&&p.d&&p.h);
 
       if (!imported.length) { showAlert('❌ Sin productos válidos. Revisa que las celdas tengan datos.','error'); return; }
