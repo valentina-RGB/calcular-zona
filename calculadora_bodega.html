@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Espacio — Bodega</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:     #1a7a2e;
+    --green-mid: #2ea043;
+    --green-lt:  #e6f4ea;
+    --green-xlt: #f3fbf5;
+    --red:       #d32f2f;
+    --red-lt:    #ffebee;
+    --orange:    #e65100;
+    --orange-lt: #fff3e0;
+    --gray-900:  #1a1a1a;
+    --gray-700:  #3d3d3d;
+    --gray-500:  #757575;
+    --gray-300:  #d4d4d4;
+    --gray-100:  #f5f5f5;
+    --white:     #ffffff;
+    --shadow:    0 2px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+    --radius:    14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f0f7f1;
+    color: var(--gray-900);
+    min-height: 100vh;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--green);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(26,122,46,0.3);
+  }
+  header .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: white;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  header .logo span { font-size: 1.4rem; }
+  header .badge {
+    background: rgba(255,255,255,0.15);
+    color: white;
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  /* ─── LAYOUT ─── */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ─── STEPS ─── */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+    background: white;
+    border-radius: var(--radius);
+    padding: 6px;
+    box-shadow: var(--shadow);
+  }
+  .step-btn {
+    flex: 1;
+    padding: 10px 8px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--gray-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+  .step-btn.active {
+    background: var(--green);
+    color: white;
+    box-shadow: 0 2px 8px rgba(26,122,46,0.3);
+  }
+  .step-btn.done { color: var(--green); }
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: currentColor;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-btn.active .step-num { background: rgba(255,255,255,0.3); }
+  .step-btn.done .step-num { background: var(--green); color: white; }
+  .step-btn:not(.active) .step-num { background: var(--gray-300); color: white; }
+
+  /* ─── CARD ─── */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    background: var(--green);
+    padding: 20px 28px;
+    color: white;
+  }
+  .card-header h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .card-header p { font-size: 0.82rem; opacity: 0.8; }
+
+  .card-body { padding: 28px; }
+
+  /* ─── FORM ─── */
+  .field-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .field input, .field select {
+    padding: 11px 14px;
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--gray-900);
+    background: var(--gray-100);
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--green-mid);
+    background: white;
+  }
+  .field input[type=number] { font-weight: 600; color: var(--green); }
+
+  /* ─── SPACE VISUAL ─── */
+  .space-visual {
+    background: var(--green-xlt);
+    border: 2px dashed var(--green-mid);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .space-box {
+    width: 80px; height: 60px;
+    background: var(--green-lt);
+    border: 2px solid var(--green-mid);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    flex-shrink: 0;
+  }
+  .space-info { flex: 1; }
+  .space-info .space-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--green);
+  }
+  .space-info .space-label {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    margin-top: 2px;
+  }
+
+  /* ─── PRODUCT ROWS ─── */
+  .product-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+
+  .product-row {
+    background: var(--gray-100);
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 1fr 90px 90px auto;
+    gap: 12px;
+    align-items: center;
+    transition: border-color 0.2s;
+  }
+  .product-row:hover { border-color: var(--green-mid); }
+  .product-row select {
+    padding: 8px 10px;
+    border: 2px solid var(--gray-300);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    background: white;
+    outline: none;
+    cursor: pointer;
+  }
+  .product-row select:focus { border-color: var(--green-mid); }
+  .product-row input[type=number] {
+    padding: 8px 10px;
+    border: 2px solid var(--gray-300);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--green);
+    background: white;
+    text-align: center;
+    outline: none;
+    width: 100%;
+  }
+  .product-row input[type=number]:focus { border-color: var(--green-mid); }
+  .remove-btn {
+    width: 30px; height: 30px;
+    border: none;
+    background: var(--red-lt);
+    color: var(--red);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .remove-btn:hover { background: var(--red); color: white; }
+
+  .product-row-labels {
+    display: grid;
+    grid-template-columns: 1fr 90px 90px 30px;
+    gap: 12px;
+    padding: 0 16px;
+    margin-bottom: 6px;
+  }
+  .product-row-labels span {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .add-btn {
+    width: 100%;
+    padding: 11px;
+    border: 2px dashed var(--green-mid);
+    background: var(--green-xlt);
+    color: var(--green);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .add-btn:hover { background: var(--green-lt); border-style: solid; }
+
+  /* ─── BUTTONS ─── */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    justify-content: flex-end;
+  }
+  .btn {
+    padding: 12px 28px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: var(--green);
+    color: white;
+    box-shadow: 0 3px 12px rgba(26,122,46,0.3);
+  }
+  .btn-primary:hover { background: var(--green-mid); transform: translateY(-1px); }
+  .btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 2px solid var(--gray-300);
+  }
+  .btn-secondary:hover { background: var(--gray-300); }
+
+  /* ─── RESULTS ─── */
+  .result-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+  .result-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px 120px;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    border: 2px solid transparent;
+    transition: all 0.3s;
+  }
+  .result-row.ok    { background: var(--green-lt); border-color: #a8d5b0; }
+  .result-row.fail  { background: var(--red-lt);   border-color: #f5b8b8; }
+  .result-row.warn  { background: var(--orange-lt);border-color: #ffcc80; }
+
+  .result-row .prod-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .result-row .prod-dims {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 2px;
+  }
+  .result-stat { text-align: center; }
+  .result-stat .val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+  .result-stat .lbl { font-size: 0.7rem; color: var(--gray-500); }
+  .result-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: center;
+  }
+  .badge-ok   { background: var(--green);  color: white; }
+  .badge-fail { background: var(--red);    color: white; }
+  .badge-warn { background: var(--orange); color: white; }
+
+  .result-headers {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px 120px;
+    gap: 12px;
+    padding: 0 16px 6px;
+  }
+  .result-headers span {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .result-headers span:first-child { text-align: left; }
+
+  /* ─── SUMMARY BOX ─── */
+  .summary-box {
+    border-radius: var(--radius-sm);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .summary-box.ok   { background: var(--green-lt); border: 2px solid #a8d5b0; }
+  .summary-box.fail { background: var(--red-lt);   border: 2px solid #f5b8b8; }
+  .summary-box.warn { background: var(--orange-lt);border: 2px solid #ffcc80; }
+  .summary-icon { font-size: 2.2rem; }
+  .summary-text h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .summary-text p { font-size: 0.84rem; color: var(--gray-700); }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--gray-100);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    text-align: center;
+    border: 2px solid var(--gray-300);
+  }
+  .stat-card .val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--green);
+  }
+  .stat-card .lbl { font-size: 0.75rem; color: var(--gray-500); margin-top: 3px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span>🏭</span> BodegaCalc</div>
+  <div class="badge">Calculadora de Espacio</div>
+</header>
+
+<div class="container">
+
+  <!-- STEPS -->
+  <div class="steps">
+    <button class="step-btn active" id="sBtn1" onclick="goStep(1)">
+      <span class="step-num">1</span> Espacio libre
+    </button>
+    <button class="step-btn" id="sBtn2" onclick="goStep(2)">
+      <span class="step-num">2</span> Productos a meter
+    </button>
+    <button class="step-btn" id="sBtn3" onclick="goStep(3)">
+      <span class="step-num">3</span> Resultado
+    </button>
+  </div>
+
+  <!-- STEP 1 -->
+  <div id="step1" class="card">
+    <div class="card-header">
+      <h2>¿Cuánto espacio libre hay en el área?</h2>
+      <p>El operario mide (o estima) el espacio disponible sin ocupar</p>
+    </div>
+    <div class="card-body">
+      <div class="field-group">
+        <div class="field">
+          <label>Nombre del área</label>
+          <input type="text" id="areaName" placeholder="ej: Bodega A" value="Bodega Principal">
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field">
+          <label>Ancho libre (cm)</label>
+          <input type="number" id="areaW" placeholder="300" value="300" min="1">
+        </div>
+        <div class="field">
+          <label>Largo libre (cm)</label>
+          <input type="number" id="areaL" placeholder="400" value="400" min="1">
+        </div>
+        <div class="field">
+          <label>Alto libre (cm)</label>
+          <input type="number" id="areaH" placeholder="180" value="180" min="1">
+        </div>
+      </div>
+
+      <div class="space-visual" id="spaceVisual">
+        <div class="space-box">📐</div>
+        <div class="space-info">
+          <div class="space-val" id="spaceVal">—</div>
+          <div class="space-label">cm² de planta disponible</div>
+        </div>
+        <div class="space-info">
+          <div class="space-val" id="volVal">—</div>
+          <div class="space-label">cm³ de volumen libre</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="goStep(2)">Siguiente →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="step2" class="card hidden">
+    <div class="card-header">
+      <h2>¿Qué productos quieres meter?</h2>
+      <p>Selecciona del catálogo y define la cantidad de cada uno</p>
+    </div>
+    <div class="card-body">
+      <div class="product-row-labels">
+        <span>Producto</span>
+        <span style="text-align:center">Cantidad</span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="product-list" id="productList"></div>
+      <button class="add-btn" onclick="addProduct()">＋ Agregar producto</button>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(1)">← Volver</button>
+        <button class="btn btn-primary" onclick="calculate()">Calcular ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div id="step3" class="card hidden">
+    <div class="card-header">
+      <h2>Resultado</h2>
+      <p id="resultSubtitle">—</p>
+    </div>
+    <div class="card-body">
+      <div id="summaryBox" class="summary-box ok">
+        <div class="summary-icon" id="summaryIcon">✅</div>
+        <div class="summary-text">
+          <h3 id="summaryTitle">—</h3>
+          <p id="summaryDesc">—</p>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="val" id="statPlanta">—</div>
+          <div class="lbl">cm² disponibles</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="statUsado">—</div>
+          <div class="lbl">cm² mínimos requeridos</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="statSobrante">—</div>
+          <div class="lbl">cm² sobrantes</div>
+        </div>
+      </div>
+
+      <div class="result-headers">
+        <span>Producto</span>
+        <span>Solicitado</span>
+        <span>Máx. que caben</span>
+        <span>Estado</span>
+      </div>
+      <div class="result-grid" id="resultGrid"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(2)">← Ajustar</button>
+        <button class="btn btn-primary" onclick="goStep(1)">Nueva consulta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATALOG = [
+  { name: "Jabón",           w: 80, d: 50, h: 10 },
+  { name: "Caja mediana",    w: 40, d: 30, h: 30 },
+  { name: "Caja grande",     w: 60, d: 50, h: 50 },
+  { name: "Botella 1L",      w: 10, d: 10, h: 30 },
+  { name: "Bolsa cereal",    w: 25, d: 10, h: 35 },
+  { name: "Detergente",      w: 15, d: 15, h: 28 },
+  { name: "Shampoo 500ml",   w:  8, d:  8, h: 24 },
+  { name: "Arroz 5kg",       w: 30, d: 10, h: 40 },
+  { name: "Aceite 1L",       w:  8, d:  8, h: 28 },
+  { name: "Papel higiénico", w: 20, d: 20, h: 22 },
+];
+
+let productCount = 0;
+
+function fmt(n) { return n.toLocaleString('es-CO'); }
+
+// Live update space visual
+['areaW','areaL','areaH'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateSpaceVisual);
+});
+function updateSpaceVisual() {
+  const w = +document.getElementById('areaW').value || 0;
+  const l = +document.getElementById('areaL').value || 0;
+  const h = +document.getElementById('areaH').value || 0;
+  document.getElementById('spaceVal').textContent = w && l ? fmt(w * l) : '—';
+  document.getElementById('volVal').textContent   = w && l && h ? fmt(w * l * h) : '—';
+}
+updateSpaceVisual();
+
+function buildSelect(selected = '') {
+  return `<select onchange="updateRowDims(this)">
+    <option value="">— Elegir producto —</option>
+    ${CATALOG.map(p => `<option value="${p.name}" ${p.name === selected ? 'selected' : ''}>${p.name}</option>`).join('')}
+  </select>`;
+}
+
+function addProduct(name = '', qty = '') {
+  productCount++;
+  const id = productCount;
+  const div = document.createElement('div');
+  div.className = 'product-row';
+  div.id = `pr-${id}`;
+  div.innerHTML = `
+    ${buildSelect(name).replace('<select', `<select id="sel-${id}"`)}
+    <input type="number" id="qty-${id}" placeholder="Cant." value="${qty}" min="1">
+    <div style="font-size:0.75rem;color:var(--gray-500);text-align:center" id="dims-${id}">—</div>
+    <button class="remove-btn" onclick="removeProduct(${id})">✕</button>
+  `;
+  document.getElementById('productList').appendChild(div);
+  if (name) updateDims(id);
+  document.getElementById(`sel-${id}`).addEventListener('change', () => updateDims(id));
+}
+
+function updateDims(id) {
+  const sel = document.getElementById(`sel-${id}`).value;
+  const p = CATALOG.find(x => x.name === sel);
+  const el = document.getElementById(`dims-${id}`);
+  if (p) el.innerHTML = `${p.w}×${p.d}×${p.h} cm`;
+  else el.textContent = '—';
+}
+
+function updateRowDims(sel) {
+  const id = sel.id.replace('sel-', '');
+  updateDims(id);
+}
+
+function removeProduct(id) {
+  document.getElementById(`pr-${id}`)?.remove();
+}
+
+// Pre-load sample products
+addProduct('Jabón', 50);
+addProduct('Caja mediana', 20);
+
+function goStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById(`step${i}`).classList.toggle('hidden', i !== n);
+    const btn = document.getElementById(`sBtn${i}`);
+    btn.classList.remove('active', 'done');
+    if (i === n) btn.classList.add('active');
+    else if (i < n) btn.classList.add('done');
+  });
+}
+
+function calculate() {
+  const aW = +document.getElementById('areaW').value || 0;
+  const aL = +document.getElementById('areaL').value || 0;
+  const aH = +document.getElementById('areaH').value || 0;
+  const aName = document.getElementById('areaName').value || 'Área';
+
+  if (!aW || !aL || !aH) { alert('Completa las dimensiones del área'); return; }
+
+  const rows = document.querySelectorAll('.product-row');
+  const items = [];
+  for (const row of rows) {
+    const id = row.id.replace('pr-', '');
+    const name = document.getElementById(`sel-${id}`).value;
+    const qty  = +document.getElementById(`qty-${id}`).value || 0;
+    if (!name) continue;
+    const p = CATALOG.find(x => x.name === name);
+    if (!p || !qty) continue;
+    const capas   = Math.max(1, Math.floor(aH / p.h));
+    const filas   = Math.floor(aW / p.w);
+    const cols    = Math.floor(aL / p.d);
+    const maxUnit = filas * cols * capas;
+    const minPlanta = Math.ceil(qty / capas) * p.w * p.d;
+    items.push({ name, qty, maxUnit, minPlanta, p, capas, filas, cols });
+  }
+
+  if (!items.length) { alert('Agrega al menos un producto con cantidad'); return; }
+
+  const totalPlanta   = aW * aL;
+  const totalReq      = items.reduce((s, x) => s + x.minPlanta, 0);
+  const sobrante      = totalPlanta - totalReq;
+  const allFit        = items.every(x => x.qty <= x.maxUnit);
+  const plantaOk      = totalReq <= totalPlanta;
+
+  // Summary
+  let sClass, sIcon, sTitle, sDesc;
+  if (allFit && plantaOk) {
+    sClass = 'ok'; sIcon = '✅';
+    sTitle = '¡Todo cabe correctamente!';
+    sDesc  = `Los ${items.length} producto(s) entran en el espacio libre de ${aName}.`;
+  } else if (!plantaOk) {
+    sClass = 'fail'; sIcon = '❌';
+    sTitle = 'No caben todos los productos';
+    sDesc  = `La planta mínima requerida (${fmt(totalReq)} cm²) supera el espacio disponible (${fmt(totalPlanta)} cm²).`;
+  } else {
+    sClass = 'warn'; sIcon = '⚠️';
+    sTitle = 'Algunos productos no caben';
+    sDesc  = 'Revisa los productos marcados en rojo y ajusta las cantidades.';
+  }
+
+  const box = document.getElementById('summaryBox');
+  box.className = `summary-box ${sClass}`;
+  document.getElementById('summaryIcon').textContent  = sIcon;
+  document.getElementById('summaryTitle').textContent = sTitle;
+  document.getElementById('summaryDesc').textContent  = sDesc;
+  document.getElementById('resultSubtitle').textContent = aName;
+
+  document.getElementById('statPlanta').textContent   = fmt(totalPlanta);
+  document.getElementById('statUsado').textContent    = fmt(totalReq);
+  document.getElementById('statSobrante').textContent = sobrante >= 0 ? fmt(sobrante) : `−${fmt(Math.abs(sobrante))}`;
+
+  const grid = document.getElementById('resultGrid');
+  grid.innerHTML = '';
+  for (const item of items) {
+    const ok = item.qty <= item.maxUnit;
+    const cls = ok ? 'ok' : 'fail';
+    const badge = ok ? '<span class="result-badge badge-ok">✅ SÍ CABE</span>'
+                     : '<span class="result-badge badge-fail">❌ NO CABE</span>';
+    grid.innerHTML += `
+      <div class="result-row ${cls}">
+        <div>
+          <div class="prod-name">${item.name}</div>
+          <div class="prod-dims">${item.p.w}×${item.p.d}×${item.p.h} cm · ${item.capas} cap${item.capas>1?'as':'a'} · ${item.filas}×${item.cols} por capa</div>
+        </div>
+        <div class="result-stat">
+          <div class="val">${item.qty}</div>
+          <div class="lbl">unidades</div>
+        </div>
+        <div class="result-stat">
+          <div class="val" style="color:${ok?'var(--green)':'var(--red)'}">${item.maxUnit}</div>
+          <div class="lbl">máximo</div>
+        </div>
+        ${badge}
+      </div>`;
+  }
+
+  goStep(3);
+}
+</script>
+</body>
+</html>
